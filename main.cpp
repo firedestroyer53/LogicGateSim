@@ -3,6 +3,8 @@
 #include <iostream>
 #include "Solver.h"
 
+#define input_port true
+#define output_port false
 
 int main() {
     auto s = std::make_unique<Solver>();
@@ -12,9 +14,9 @@ int main() {
     auto nand = std::make_unique<NandGate>();
     auto output = std::make_unique<InOut>(false);
 
-    s->addWire(&i1->outputs[0], &nand->inputs[0]);
-    s->addWire(&i2->outputs[0], &nand->inputs[1]);
-    s->addWire(&nand->outputs[0], &output->inputs[0]);
+    s->addWire(i1->getPort(output_port, 0), nand->getPort(input_port, 0));
+    s->addWire(i2->getPort(output_port, 0), nand->getPort(input_port, 1));
+    s->addWire(nand->getPort(output_port, 0), output->getPort(input_port, 0));
 
     s->addNode(std::move(i1));
     s->addNode(std::move(i2));
@@ -24,14 +26,12 @@ int main() {
     std::vector<Node*> inputs = s->getInputs();
     std::vector<Node*> outputs = s->getOutputs();
 
-    inputs[0]->inputs[0].state = true;
-    inputs[1]->inputs[0].state = true;
+    inputs[0]->setState(input_port, 0, true);
+    inputs[1]->setState(input_port, 1, true);
 
     s->pubSolve();
 
-
-
-    std::cout << outputs[0]->outputs[0].state << std::endl;
+    std::cout << outputs[0]->getPort(output_port)->state << std::endl;
 
     return 0;
 }

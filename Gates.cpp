@@ -1,45 +1,66 @@
 #include "Gates.h"
 
-class NandGate : public Node {
-    public:
-        NandGate() {
-            Port p;
-            p.parent = this;
-            this->inputs.push_back(p);
-            this->inputs.push_back(p);
-            this->outputs.push_back(p);
-        }
-        bool compute() {
-            bool initial = outputs[0].state;
-            if (!(inputs[0].state & inputs[1].state)) {
-                outputs[0].state = true;
-                
-            } 
-            else {
-                outputs[0].state = false;
-            }
-            return initial != outputs[0].state;
-        }
-};
+Port* Node::getPort(bool isInput, int index) {
+    if (isInput) {
+        return &this->inputs[index];
+    }
+    return &this->outputs[index];
+}
 
-class InOut : public Node {
-    public:
-        bool isInput;
-        bool isDirty;
+void Node::setState(bool isInput, int index, bool state) {
+    if (isInput) {
+        this->inputs[index].state = state;
+    }
+    this->outputs[index].state = state;
+}
 
-        InOut(bool isInput) {
-            this->isInput = isInput;
-            Port p;
-            p.parent = this;
-            this->inputs.push_back(p);
-            this->outputs.push_back(p);
-        }
-        bool compute() {
-            this->outputs[0] = this->inputs[0];
-            return isDirty;
-        }
-};
+void Node::addInput(int num) {
+    Port p;
+    p.parent = this;
+    for (int i = 0; i < num; i++) {
+        this->inputs.push_back(p);
+    }
+}
 
+void Node::addOutput(int num) {
+    Port p;
+    p.parent = this;
+    for (int i = 0; i < num; i++) {
+        this->outputs.push_back(p);
+    }
+}
+
+// Gate types
+NandGate::NandGate() {
+    addInput(2);
+    addOutput(1);
+}
+
+bool NandGate::compute() {
+    bool initial = getPort(false, 0)->state;
+    if (!(getPort(true, 0)->state & getPort(true, 1)->state)) {
+        setState(false, true);
+    } 
+    else {
+        setState(false, false);
+    }
+    return initial != getPort(false)->state;
+}
+
+
+InOut::InOut(bool isInput) {
+    this->isInput = isInput;
+    addInput(1);
+    addOutput(1);
+}
+
+bool InOut::compute() {
+    setState(false, getPort(true)->state);
+    return isDirty;
+}
+
+
+// other
 void Wire::transfer() {
     this->to->state = this->from->state; // transfer the signal
 }
